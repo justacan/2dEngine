@@ -75,9 +75,12 @@ class Map {
       if ( AABB(addPadding({x, y, width, height}), addPadding(room))) return false;
     }
 
+    const corners = [];
+
     // Apply room to map
     for (let iY = y; iY < y + height; iY++) {
       for (let iX = x; iX < x + width; iX++) {
+        if ( ( iX === x && iY === y) || (iX === x && iY === y) ) corners.push(iX, iY)
         if (iY === y || iX === x || iY === y + height - 1 || iX === x + width - 1) {
           this.setTile(iX, iY, 2);
         } else {
@@ -88,7 +91,7 @@ class Map {
     }
 
     // Save room to be checked for overlap
-    this.rooms.push({x, y, width, height, connected: []});
+    this.rooms.push({x, y, width, height, connected: [], corners});
     console.log("Room Placed!")
 
   }
