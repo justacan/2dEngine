@@ -44,6 +44,7 @@ class Map {
     for (let iRoom of this.rooms) {
       // if (room.center.x === iRoom.center.x && room.center.y === iRoom.center.y) continue;
       if (room === iRoom) continue;
+      if (iRoom.connected.includes(room)) continue;
       if (!closest) closest = iRoom;
 
       const ax = Math.abs(room.center.x - iRoom.center.x);
@@ -52,7 +53,7 @@ class Map {
       const bx = Math.abs(room.center.x - closest.center.x);
       const by = Math.abs(room.center.y - closest.center.y);
 
-      if (ax <= bx && ay <= by ) {
+      if ( (ax+ay) < (bx+by) ) {
         closest = iRoom;
       }
     }
@@ -87,13 +88,40 @@ class Map {
     }
 
     // Save room to be checked for overlap
-    this.rooms.push({x, y, width, height});
+    this.rooms.push({x, y, width, height, connected: []});
     console.log("Room Placed!")
 
   }
 
   setTile(x, y, value) {
     this.map[y][x] = value;
+  }
+
+  findPathBetweenRooms(room1, room2) {
+    let pathCursor = {x: room1.center.x, y: room1.center.y};
+    while(true) {
+
+      if (pathCursor.x < room2.center.x) {
+        pathCursor.x++;
+      } else if (pathCursor.x > room2.center.x) {
+        pathCursor.x--;
+      } else if (pathCursor.y < room2.center.y) {
+        pathCursor.y++;
+      } else if (pathCursor.y > room2.center.y) {
+        pathCursor.y--;
+      }
+
+      this.setTile(pathCursor.x, pathCursor.y, 5)
+      if (pathCursor.x === room2.center.x && pathCursor.y === room2.center.y) return true;
+    }
+
+  }
+
+  connectRooms(room1, room2) {
+    if (!room1.connected) room1.connected = [];
+    if (!room2.connected) room2.connected = [];
+    room1.connected.push(room2);
+    room2.connected.push(room1);
   }
 
   generate() {
@@ -114,12 +142,16 @@ class Map {
       this.setTile(x, y, 4)
     }
 
-    const testRoom = this.rooms[0];
-    const closest = this.findClosestRoom(testRoom);
-    this.setTile(testRoom.center.x, testRoom.center.y, 5)
-    this.setTile(closest.center.x, closest.center.y, 5)
-    console.log(testRoom);
-    console.log(closest)
+    for (let room of this.rooms) {
+      const closest = this.findClosestRoom(room);
+      this.findPathBetweenRooms(room, closest);
+      this.connectRooms(room, closest);
+    }
+
+
+
+
+
 
     // console.log(this.map);
   }
