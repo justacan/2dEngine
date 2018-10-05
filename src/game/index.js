@@ -1,39 +1,10 @@
 import Mob from './Mob';
 import Player from './Player'
-import Dungeon from './Dungeon';
+import Turns from './Turns';
+import Map from './Dungeon';
 
-class Turns {
-  constructor(entities) {
-    this.entities = entities;
-    this.turn = 0;
-    this.index = 0;
-    // this.wait = false;
-  }
 
-  advanceTurn() {
-    this.turn++
-  }
 
-  update() {
-    // if (this.wait) return false;
-    this.entities[this.index].update(() => this.afterTurn());
-  }
-
-  afterTurn() {
-
-    this.index++;
-    // this.wait = false;
-
-    if (this.index >= this.entities.length) {
-      this.index = 0;
-      console.log('your turn')
-      this.turn++;
-      return;
-    }
-
-  }
-
-}
 
 
 
@@ -46,7 +17,7 @@ class Game {
       then: Date.now()
     };
     this.turnTakers;
-    this.map = [];
+    this.map;
 
   }
 
@@ -69,30 +40,13 @@ class Game {
 
     this.turnTakers = new Turns(tt);
 
-    // this.makeGrid();
-    const d = new Dungeon();
-    d.Generate();
-    this.map = d.map;
-    console.log(this.map)
+    this.map = new Map(this.canvas, this.ctx);
+    // this.map.registerCanvas(this.canvas, this.ctx);
+    this.map.generate();
 
     requestAnimationFrame(() => this.loop())
   }
 
-  //7a4207
-  makeGrid() {
-    this.map = [];
-
-    const width = this.canvas.width / 16;
-    const height = this.canvas.height / 16;
-
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        if (!this.map[y]) {this.map[y] = []}
-        this.map[y][x] = ( Math.round(Math.random() * 100 + 1) > 90 ) ? 1 : 0 ;
-      }
-    }
-    console.log(this.map)
-  }
 
   line(x0, y0, x1, y1){
    var dx = Math.abs(x1-x0);
@@ -115,39 +69,7 @@ class Game {
     this.map[y][x] = toWhat
   }
 
-  grid() {
 
-    const width = this.canvas.width / 16;
-    const height = this.canvas.height / 16;
-    const size = 16;
-
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        if (this.map[y][x] === 1 ) {
-          this.ctx.fillStyle="#7a4207";
-          this.ctx.fillRect(x * size,y * size,size,size);
-        }
-        if (this.map[y][x] === 2 ) {
-          this.ctx.fillStyle="#1449ce";
-          this.ctx.fillRect(x * size,y * size,size,size);
-        }
-        if (this.map[y][x] === 4 ) {
-          this.ctx.fillStyle="#f2da02";
-          this.ctx.fillRect(x * size,y * size,size,size);
-        }
-        if (this.map[y][x] === 0 ) {
-          continue;
-          this.ctx.strokeStyle="#266ee2";
-          this.ctx.lineWidth=1;
-          this.ctx.strokeRect(x * size,y * size,size,size);
-        }
-
-      }
-    }
-
-
-
-  }
 
   loop() {
     this.clearScreen();
@@ -156,15 +78,17 @@ class Game {
     const delta = (this.time.now - this.time.then) / 1000;
     this.time.then = this.time.now;
 
-    this.grid();
+    this.map.render();
 
-    this.line(
-      this.turnTakers.entities[0].pos.x,
-      this.turnTakers.entities[0].pos.y,
-      this.turnTakers.entities[1].pos.x,
-      this.turnTakers.entities[1].pos.y
-    );
+    // this.grid();
 
+    // this.line(
+    //   this.turnTakers.entities[0].pos.x,
+    //   this.turnTakers.entities[0].pos.y,
+    //   this.turnTakers.entities[1].pos.x,
+    //   this.turnTakers.entities[1].pos.y
+    // );
+    //
     this.turnTakers.update();
     this.turnTakers.entities.forEach(tt => {
       tt.render();

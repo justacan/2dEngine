@@ -47,7 +47,7 @@ const Player = (name, x, y) => {
 
     if (Object.values(keys).some(e => e)) {
       state.keyLock = true;
-      setTimeout(() => {state.keyLock = false}, 250);
+      setTimeout(() => {state.keyLock = false}, 150);
       afterTurn();
     }
 

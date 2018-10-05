@@ -1,152 +1,155 @@
-const Helpers = {
-  GetRandom: function (low, high) {
-    return ~~(Math.random() * (high - low)) + low;
+import AABB from "./AABB";
+
+function getRandomArbitrary(min, max) {
+  return Math.round(Math.random() * (max - min) + min);
+}
+
+const addPadding = (room, padding = 1) => {
+  const {x, y, width, height} = room;
+  return {
+    x: x - padding,
+    y: y - padding,
+    width: width + padding,
+    height: height + padding
   }
 };
 
-export default class Dungeon {
-  constructor() {
-    this.map = null;
-    // this.map_size = 64;
-    this.map_size = 50;
+class Map {
+  constructor(canvas, ctx) {
+    this.map = [];
     this.rooms = [];
+    this.canvas = canvas;
+    this.ctx = ctx;
+    this.tileSize = 16;
+    this.width = this.canvas.width / this.tileSize;
+    this.height = this.canvas.height / this.tileSize;
   }
 
-  FindClosestRoom(room) {
-    var mid = {
-      x: room.x + (room.w / 2),
-      y: room.y + (room.h / 2)
-    };
-    var closest = null;
-    var closest_distance = 1000;
-    for (var i = 0; i < this.rooms.length; i++) {
-      var check = this.rooms[i];
-      if (check == room) continue;
-      var check_mid = {
-        x: check.x + (check.w / 2),
-        y: check.y + (check.h / 2)
-      };
-      var distance = Math.min(Math.abs(mid.x - check_mid.x) - (room.w / 2) - (check.w / 2), Math.abs(mid.y - check_mid.y) - (room.h / 2) - (check.h / 2));
-      if (distance < closest_distance) {
-        closest_distance = distance;
-        closest = check;
+  registerCanvas(canvas, ctx) {
+    this.canvas = canvas;
+    this.ctx = ctx;
+  }
+
+  iterate(func) {
+    const {width, height} = this;
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        func(x, y);
+      }
+    }
+  }
+
+  findClosestRoom(room) {
+    let closest = null;
+    for (let iRoom of this.rooms) {
+      // if (room.center.x === iRoom.center.x && room.center.y === iRoom.center.y) continue;
+      if (room === iRoom) continue;
+      if (!closest) closest = iRoom;
+
+      const ax = Math.abs(room.center.x - iRoom.center.x);
+      const ay = Math.abs(room.center.y - iRoom.center.y);
+
+      const bx = Math.abs(room.center.x - closest.center.x);
+      const by = Math.abs(room.center.y - closest.center.y);
+
+      if (ax <= bx && ay <= by ) {
+        closest = iRoom;
       }
     }
     return closest;
   }
 
+  placeRoom() {
+    const x = getRandomArbitrary(0, this.width);
+    const y = getRandomArbitrary(0, this.height);
+    const width = getRandomArbitrary(5, 10);
+    const height = getRandomArbitrary(5, 10);
 
-  Generate() {
-    this.map = [];
-    for (var x = 0; x < this.map_size; x++) {
-      this.map[x] = [];
-      for (var y = 0; y < this.map_size; y++) {
-        this.map[x][y] = 0;
-      }
+    // Out of bounds check
+    if ((y + height) > this.height) return false;
+    if ((x + width) > this.width) return false;
+
+    // Overlap check
+    for (let room of this.rooms) {
+      if ( AABB(addPadding({x, y, width, height}), addPadding(room))) return false;
     }
 
-    var room_count = Helpers.GetRandom(10, 20);
-    var min_size = 5;
-    var max_size = 15;
-
-    for (var i = 0; i < room_count; i++) {
-      var room = {};
-
-      room.x = Helpers.GetRandom(1, this.map_size - max_size - 1);
-      room.y = Helpers.GetRandom(1, this.map_size - max_size - 1);
-      room.w = Helpers.GetRandom(min_size, max_size);
-      room.h = Helpers.GetRandom(min_size, max_size);
-
-      if (this.DoesCollide(room)) {
-        i--;
-        continue;
-      }
-      room.w--;
-      room.h--;
-
-      this.rooms.push(room);
-    }
-
-    this.SquashRooms();
-
-    for (i = 0; i < room_count; i++) {
-      var roomA = this.rooms[i];
-      var roomB = this.FindClosestRoom(roomA);
-
-      let pointA = {
-        x: Helpers.GetRandom(roomA.x, roomA.x + roomA.w),
-        y: Helpers.GetRandom(roomA.y, roomA.y + roomA.h)
-      };
-      let pointB = {
-        x: Helpers.GetRandom(roomB.x, roomB.x + roomB.w),
-        y: Helpers.GetRandom(roomB.y, roomB.y + roomB.h)
-      };
-
-      while ((pointB.x != pointA.x) || (pointB.y != pointA.y)) {
-        if (pointB.x != pointA.x) {
-          if (pointB.x > pointA.x) pointB.x--;
-          else pointB.x++;
-        } else if (pointB.y != pointA.y) {
-          if (pointB.y > pointA.y) pointB.y--;
-          else pointB.y++;
+    // Apply room to map
+    for (let iY = y; iY < y + height; iY++) {
+      for (let iX = x; iX < x + width; iX++) {
+        if (iY === y || iX === x || iY === y + height - 1 || iX === x + width - 1) {
+          this.setTile(iX, iY, 2);
+        } else {
+          this.setTile(iX, iY, 1);
         }
 
-        this.map[pointB.x][pointB.y] = 1;
       }
     }
 
-    for (i = 0; i < room_count; i++) {
-      var room = this.rooms[i];
-      for (var x = room.x; x < room.x + room.w; x++) {
-        for (var y = room.y; y < room.y + room.h; y++) {
-          this.map[x][y] = 1;
-        }
-      }
-    }
+    // Save room to be checked for overlap
+    this.rooms.push({x, y, width, height});
+    console.log("Room Placed!")
 
-    for (var x = 0; x < this.map_size; x++) {
-      for (var y = 0; y < this.map_size; y++) {
-        if (this.map[x][y] == 1) {
-          for (var xx = x - 1; xx <= x + 1; xx++) {
-            for (var yy = y - 1; yy <= y + 1; yy++) {
-              if (this.map[xx][yy] == 0) this.map[xx][yy] = 2;
-            }
-          }
-        }
-      }
-    }
   }
 
-  SquashRooms() {
-    for (var i = 0; i < 10; i++) {
-      for (var j = 0; j < this.rooms.length; j++) {
-        var room = this.rooms[j];
-        while (true) {
-          var old_position = {
-            x: room.x,
-            y: room.y
-          };
-          if (room.x > 1) room.x--;
-          if (room.y > 1) room.y--;
-          if ((room.x == 1) && (room.y == 1)) break;
-          if (this.DoesCollide(room, j)) {
-            room.x = old_position.x;
-            room.y = old_position.y;
-            break;
-          }
-        }
-      }
-    }
+  setTile(x, y, value) {
+    this.map[y][x] = value;
   }
 
-  DoesCollide(room, ignore) {
-    for (var i = 0; i < this.rooms.length; i++) {
-      if (i == ignore) continue;
-      var check = this.rooms[i];
-      if (!((room.x + room.w < check.x) || (room.x > check.x + check.w) || (room.y + room.h < check.y) || (room.y > check.y + check.h))) return true;
+  generate() {
+    this.iterate((x, y) => {
+      if (!this.map[y]) this.map[y] = []
+      this.setTile(x, y, 0);
+    });
+    console.log('Map Zeroed')
+
+    for (let i = 0;i < 1000; i++) {
+      this.placeRoom();
     }
 
-    return false;
+    for (let room of this.rooms) {
+      let x = Math.floor(room.width / 2) + room.x;
+      let y = Math.floor(room.height / 2) + room.y;
+      room.center = {x, y};
+      this.setTile(x, y, 4)
+    }
+
+    const testRoom = this.rooms[0];
+    const closest = this.findClosestRoom(testRoom);
+    this.setTile(testRoom.center.x, testRoom.center.y, 5)
+    this.setTile(closest.center.x, closest.center.y, 5)
+    console.log(testRoom);
+    console.log(closest)
+
+    // console.log(this.map);
+  }
+
+  render() {
+    const {width, height, tileSize} = this;
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        if (this.map[y][x] === 1 ) {
+          this.ctx.fillStyle="#7a4207";
+          this.ctx.fillRect(x * tileSize,y * tileSize,tileSize,tileSize);
+        }
+        if (this.map[y][x] === 2 ) {
+          this.ctx.fillStyle="#1449ce";
+          this.ctx.fillRect(x * tileSize,y * tileSize,tileSize,tileSize);
+        }
+        if (this.map[y][x] === 4 ) {
+          this.ctx.fillStyle="#f2da02";
+          this.ctx.fillRect(x * tileSize,y * tileSize,tileSize,tileSize);
+        }
+        if (this.map[y][x] === 5) {
+          this.ctx.fillStyle="#1d6d2a";
+          this.ctx.fillRect(x * tileSize,y * tileSize,tileSize,tileSize);
+        }
+
+
+      }
+    }
   }
 }
 
+export default Map;
