@@ -1,0 +1,15 @@
+body {
+    background: gainsboro;
+}
+
+.flexCenter {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 2rem;
+  height: 100%;
+}
+
+#gameScreen {
+  background: black;
+}
