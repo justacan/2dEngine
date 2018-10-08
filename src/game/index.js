@@ -3,10 +3,22 @@ import Player from './Player'
 import Turns from './Turns';
 import Map from './Dungeon';
 
+class GUI {
+  constructor(canvas, ctx) {
+    this.canvas = canvas;
+    this.ctx = ctx;
+    this.startX = 801
+  }
 
-
-
-
+  render() {
+    const {ctx} = this;
+    ctx.strokeStyle="#ff0800"
+    ctx.beginPath();
+    ctx.moveTo(this.startX,0);
+    ctx.lineTo(this.startX,this.canvas.height);
+    ctx.stroke();
+  }
+}
 
 class Game {
   constructor(canvas, ctx) {
@@ -18,6 +30,7 @@ class Game {
     };
     this.turnTakers;
     this.map;
+    this.gui = new GUI(this.canvas, this.ctx);
 
   }
 
@@ -27,22 +40,28 @@ class Game {
 
   load() {
 
-    let tt = []
+    let tt = [];
 
-    const player = Player('Player', 10, 10);
-    player.registerCanvas(this.canvas, this.ctx);
+    this.map = new Map(this.canvas, this.ctx);   
+    // this.map.mapSize(50, 50);
+    this.map.generate();
 
-    let m = Mob('Yolo', 2, 2);
-    m.registerCanvas(this.canvas, this.ctx);
+    const firstRoom = this.map.rooms[0];    
+
+    const player = new Player('Player', firstRoom.center.x, firstRoom.center.y);
+    player.registerCanvas(this.canvas, this.ctx);    
 
     tt.push(player);
-    tt.push(m);
 
-    this.turnTakers = new Turns(tt);
+    for (let i = 1; i < 5; i++) {
+      const room = this.map.rooms[i];    
+      let m = new Mob('Yolo', room.center.x, room.center.y);
+      m.registerCanvas(this.canvas, this.ctx);
+      tt.push(m);
+    }
+    
 
-    this.map = new Map(this.canvas, this.ctx);
-    // this.map.registerCanvas(this.canvas, this.ctx);
-    this.map.generate();
+    this.turnTakers = new Turns(tt, (x, y) => this.map.getTile(x, y));
 
     requestAnimationFrame(() => this.loop())
   }
@@ -69,8 +88,6 @@ class Game {
     this.map[y][x] = toWhat
   }
 
-
-
   loop() {
     this.clearScreen();
 
@@ -93,6 +110,8 @@ class Game {
     this.turnTakers.entities.forEach(tt => {
       tt.render();
     });
+
+    this.gui.render();
 
     requestAnimationFrame(() => this.loop());
   }

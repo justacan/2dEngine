@@ -1,27 +1,39 @@
-import hasTurns from './abstract/hasTurns';
 import Entity from './abstract/Entity';
+import Move from './actions/move';
+import _ from 'lodash'
 
-const Mob = (name, x, y) => {
+const dirs = ['north', 'east', 'south', 'west'];
 
-  let state = Entity(name, x, y);
+class Mob extends Entity {
 
-  state.render = () => {
-    const {ctx, pos, size} = state;
+  getAction() {    
+    if (this.action) {
+      return this.action;
+    }
+    this.action = Move(_.sample(dirs))
+    
+  }
+
+  render() {
+    const {ctx, pos, size} = this;
     ctx.fillStyle="#c226e2";
     ctx.fillRect(
-      state.pos.x * size.width,
+      pos.x * size.width,
       pos.y * size.height,
       size.width,
       size.height
     );
   };
+}
 
-  state.update = (afterTurn) => {
-    state.pos.y++;
-    afterTurn()
-  };
 
-  return Object.assign(state);
-};
+
+
+  
+
+  
+
+  
+
 
 export default Mob;

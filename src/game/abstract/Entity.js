@@ -1,16 +1,22 @@
-import canRegisterCanvas from './canRegisterCanvas';
+const width = 16;
+const height = 16;
 
-export default (name = 'Unnamed', x = 0, y = 0) => {
-  const width = 16;
-  const height = 16;
+export default class Entity {
+  constructor(name = 'Unnamed', x = 0, y = 0) {
+    this.name = name;
+    this.pos = {x,y};
+    this.size = {width, height};
+    this.action = false;
+    this.canvas;
+    this.ctx;
+  }
 
-  let state = {
-    name,
-    pos: {x,y},
-    size: {width, height},
-    update: () => {},
-    render: () => {}
-  };
+  registerCanvas(canvas, ctx) {
+    this.canvas = canvas;
+    this.ctx = ctx;
+  }
 
-  return Object.assign(state, canRegisterCanvas(state));
-};
+  getAction() {}
+  update() {}
+  render() {}  
+}

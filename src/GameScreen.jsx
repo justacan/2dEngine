@@ -6,7 +6,7 @@ export default class GameScreen extends Component {
 
   state = {
     screenSize: {
-      width: 800,
+      width: 1000,
       height: 800
     }
   }

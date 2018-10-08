@@ -1,18 +1,52 @@
 import KeyHandler from "./KeyHandler";
 import Entity from "./abstract/Entity";
 
+import Move from './actions/move'
 
-const Player = (name, x, y) => {
-  let state = Entity(name, x, y);
+class Player extends Entity {
+  constructor(name, x, y) {
+    super("Player", x, y);
+    this.keyLock = false;
+    this.keyHandler = new KeyHandler();
+    this.keyHandler.startEventHandler();
+  }
 
-  state.keyLock = false;
+  getAction() {
+    if (this.action) {
+      return this.action;
+    }
+    this.update();    
+  }
 
-  const keyHandler = new KeyHandler();
-  keyHandler.startEventHandler();
-  state.keyHandler = keyHandler;
+  update(afterTurn) {
+    if (this.keyLock) return false;
 
-  state.render = () => {
-    const {ctx, pos, size} = state;
+    const keys = this.keyHandler.getPressed();
+
+    switch (true) {
+      case keys.right:
+        this.action = Move('east');
+        break;
+      case keys.left:        
+        this.action = Move('west');
+        break;
+      case keys.up:
+        this.action = Move('north');        
+        break;
+      case keys.down:
+        this.action = Move('south');        
+        break;
+    }
+
+    if (Object.values(keys).some(e => e)) {
+      this.keyLock = true;
+      setTimeout(() => {this.keyLock = false}, 150);      
+    }
+
+  };
+
+  render() {    
+    const {ctx, pos, size} = this;
     ctx.fillStyle="#FF0000";
     ctx.fillRect(
       pos.x * size.width,
@@ -20,52 +54,7 @@ const Player = (name, x, y) => {
       size.width,
       size.height
     );
-  };
-
-  state.update = (afterTurn) => {
-
-    if (state.keyLock) return false;
-
-    const keys = state.keyHandler.getPressed();
-    switch (true) {
-      case keys.right:
-        state.pos.x++;
-        break;
-      case keys.left:
-        state.pos.x--;
-        // afterTurn();
-        break;
-      case keys.up:
-        state.pos.y--;
-        // afterTurn();
-        break;
-      case keys.down:
-        state.pos.y++;
-        // afterTurn();
-        break;
-    }
-
-    if (Object.values(keys).some(e => e)) {
-      state.keyLock = true;
-      setTimeout(() => {state.keyLock = false}, 150);
-      afterTurn();
-    }
-
-  };
-
-  return Object.assign(state)
-};
-
-//   update(canvas, ctx, delta) {
-//
-//
-//     if (state.keyLock && Object.values(keys).every(e => !e)) {
-//       state.keyLock = false;
-//     }
-//
-//     if (state.keyLock) return false;
-//
-
-//   }
+  }
+}
 
 export default Player;

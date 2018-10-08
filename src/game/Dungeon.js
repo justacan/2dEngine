@@ -2,22 +2,21 @@ import AABB from "./AABB";
 
 import { astar, Graph } from './lib/astar';
 
+const mapWidth = 50;
+const mapHeight = 50;
 
 const makeGraph = (map, onlyFloors = false) => {
-  const grid = [];
+  const grid = [];  
 
-  const height = map.length
-  const width = map[0].length;
-
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
+  for (let y = 0; y < mapHeight; y++) {
+    for (let x = 0; x < mapWidth; x++) {
       if (!grid[y]) grid[y] = [];
       grid[y][x] = undefined;
     }
   }
 
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
+  for (let y = 0; y < mapHeight; y++) {
+    for (let x = 0; x < mapWidth; x++) {
       if (!grid[y]) grid[y] = []
       if (onlyFloors) {
         grid[x][y] = (map[y][x].type === 'floor') ? 1 : 0;
@@ -29,52 +28,6 @@ const makeGraph = (map, onlyFloors = false) => {
 
   return new Graph(grid);
 }
-
-
-const Floor = () => {
-  return {
-    type: 'floor',
-    weight: 1,
-    fillStyle: '#47361a'
-  }
-}
-
-const Wall = () => {
-  return {
-    weight: 5,
-    fillStyle: '#aab4b7'
-  }
-}
-
-const WallCorner = () => {
-  return {
-    weight: 0,
-    fillStyle: '#09b2e5'
-  }
-}
-
-const Void = () => {
-  return {
-    weight: 1,
-    fillStyle: '#000000'
-  }
-}
-
-const Yolo = () => {
-  return {
-    weight: 1,
-    fillStyle: '#17d81b'
-  }
-}
-
-const RoomCenter = () => {
-  return {
-    weight: 1,
-    fillStyle: '#eadc10'
-  }
-}
-
-
 
 function getRandomArbitrary(min, max) {
   return Math.round(Math.random() * (max - min) + min);
@@ -90,6 +43,58 @@ const addPadding = (room, padding = 1) => {
   }
 };
 
+// Tile Types
+const Floor = () => {
+  return {
+    type: 'floor',
+    weight: 1,
+    fillStyle: '#47361a',
+    canWalk: true
+  }
+}
+
+const Wall = () => {
+  return {
+    weight: 5,
+    fillStyle: '#aab4b7',
+    canWalk: false
+  }
+}
+
+const WallCorner = () => {
+  return {
+    weight: 0,
+    fillStyle: '#09b2e5',
+    canWalk: false
+  }
+}
+
+const Void = () => {
+  return {
+    weight: 1,
+    fillStyle: '#000000',
+    canWalk: false
+    
+  }
+}
+
+const Yolo = () => {
+  return {
+    weight: 1,
+    fillStyle: '#17d81b',
+    canWalk: true
+  }
+}
+
+const RoomCenter = () => {
+  return {
+    weight: 1,
+    fillStyle: '#eadc10',
+    canWalk: true
+  }
+}
+
+
 class Map {
   constructor(canvas, ctx) {
     this.map = [];
@@ -97,8 +102,8 @@ class Map {
     this.canvas = canvas;
     this.ctx = ctx;
     this.tileSize = 16;
-    this.width = this.canvas.width / this.tileSize;
-    this.height = this.canvas.height / this.tileSize;
+    // this.width = this.canvas.width / this.tileSize;
+    // this.height = this.canvas.height / this.tileSize;
   }
 
   registerCanvas(canvas, ctx) {
@@ -107,9 +112,9 @@ class Map {
   }
 
   iterate(func) {
-    const { width, height } = this;
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
+    // const { width, height } = this;
+    for (let y = 0; y < mapHeight; y++) {
+      for (let x = 0; x < mapWidth; x++) {
         func(x, y);
       }
     }
@@ -140,14 +145,14 @@ class Map {
   roomCounter = 0;
 
   placeRoom() {
-    const x = getRandomArbitrary(0, this.width);
-    const y = getRandomArbitrary(0, this.height);
-    const width = getRandomArbitrary(5, 10);
-    const height = getRandomArbitrary(5, 10);
+    const x = getRandomArbitrary(0, mapWidth);
+    const y = getRandomArbitrary(0, mapHeight);
+    const width = getRandomArbitrary(7, 15);
+    const height = getRandomArbitrary(7, 15);
 
     // Out of bounds check
-    if ((y + height) > this.height) return false;
-    if ((x + width) > this.width) return false;
+    if ((y + height) > mapHeight) return false;
+    if ((x + width) > mapWidth) return false;
 
     // Overlap check
     for (let room of this.rooms) {
@@ -178,6 +183,8 @@ class Map {
     console.log("Room Placed!")
 
   }
+
+  getTile(x, y) {return this.map[y][x]}
 
   setTile(x, y, value) {
     this.map[y][x] = value;
@@ -223,7 +230,7 @@ class Map {
       this.connectRooms(room, closest);
     }
 
-
+    // Fix Islands
     while (true) {
       let areConnected = [];
       let notConnected = [];
@@ -248,18 +255,12 @@ class Map {
       if (areConnected.length === this.rooms.length) {
         console.log("ALL CONNECTED");
         break;
-      }
-
+      }      
       
-
-      console.log('ISLANDS')
-      console.log("fixing island!")
-      console.log(notConnected)
-      // break;
+      console.log("Fixing Island!");
 
       try {
-        const firstUp = notConnected.pop();
-        console.log(">>", firstUp)
+        const firstUp = notConnected.pop();      
         if (!firstUp) break;
         const graphWithWeight = makeGraph(this.map);
         const closest = this.findClosestRoom(firstUp, areConnected);
@@ -272,17 +273,30 @@ class Map {
         this.connectRooms(firstUp, closest);
       } catch (e) {
         // this.render()
-        break;
         console.log("BROKE")
+        break;        
       }
-
-
-
     }
+
+    // make doors
+    for (let room of this.rooms) {
+      for (let y = room.y; y < room.height + room.y; y++) {
+        for (let x = room.x; x < room.width + room.x; x++) {
+          if (x === room.x || y === room.y || x === room.width + room.x - 1 || y === room.height + room.y - 1) {
+            if (this.map[y][x].type === 'floor') {
+              this.setTile(x, y, Yolo());
+            }
+            
+          }
+        }
+      }     
+      // return;
+    }
+
   }
 
   render() {
-    const { width, height, tileSize } = this;
+    const { tileSize } = this;
 
     // const graph = makeGraph(this.map, true);
 
@@ -306,8 +320,8 @@ class Map {
 
     // return;
 
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
+    for (let y = 0; y < mapHeight; y++) {
+      for (let x = 0; x < mapWidth; x++) {
         if (!this.map[y][x]) {
           this.ctx.fillStyle = "#ff00bf"
         } else {
