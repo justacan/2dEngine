@@ -45,43 +45,29 @@ class Game {
     this.map = new Map(this.canvas, this.ctx);   
     // this.map.mapSize(50, 50);
     this.map.generate();
+    // this.map.testGenerate();
 
-    const firstRoom = this.map.rooms[0];    
+
+
+    const firstRoom = this.map.rooms[0];
 
     const player = new Player('Player', firstRoom.center.x, firstRoom.center.y);
     player.registerCanvas(this.canvas, this.ctx);    
 
     tt.push(player);
+    this.map.updateMask(player.pos.x, player.pos.y)
 
     for (let i = 1; i < 5; i++) {
-      const room = this.map.rooms[i];    
+      const room = this.map.rooms[i];
       let m = new Mob('Yolo', room.center.x, room.center.y);
       m.registerCanvas(this.canvas, this.ctx);
       tt.push(m);
     }
     
 
-    this.turnTakers = new Turns(tt, (x, y) => this.map.getTile(x, y));
+    this.turnTakers = new Turns(tt, this.map);
 
     requestAnimationFrame(() => this.loop())
-  }
-
-
-  line(x0, y0, x1, y1){
-   var dx = Math.abs(x1-x0);
-   var dy = Math.abs(y1-y0);
-   var sx = (x0 < x1) ? 1 : -1;
-   var sy = (y0 < y1) ? 1 : -1;
-   var err = dx-dy;
-
-   while(true){
-     this.setPixel(x0,y0, 4);  // Do what you need to for this
-
-     if ((x0==x1) && (y0==y1)) break;
-     var e2 = 2*err;
-     if (e2 >-dy){ err -= dy; x0  += sx; }
-     if (e2 < dx){ err += dx; y0  += sy; }
-   }
   }
 
   setPixel(x, y, toWhat) {
@@ -112,6 +98,7 @@ class Game {
     });
 
     this.gui.render();
+    this.map.renderMask();
 
     requestAnimationFrame(() => this.loop());
   }

@@ -5,7 +5,7 @@ import Move from './actions/move'
 
 class Player extends Entity {
   constructor(name, x, y) {
-    super("Player", x, y);
+    super("Player", x, y, true);
     this.keyLock = false;
     this.keyHandler = new KeyHandler();
     this.keyHandler.startEventHandler();

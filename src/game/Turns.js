@@ -1,9 +1,9 @@
 export default class Turns {
-  constructor(entities, getTile) {
+  constructor(entities, map) {
     this.entities = entities;
     this.turn = 0;
     this.index = 0;
-    this.getTile = getTile;
+    this.map = map;
     // this.wait = false;
   }
 
@@ -14,10 +14,16 @@ export default class Turns {
   actionHandler(action, actor) {
     switch (action.name) {
       case 'MOVE':        
-        const moveTile = this.getTile(actor.pos.x + action.dir.x, actor.pos.y + action.dir.y);
-        if (!moveTile.canWalk) return false;        
-        actor.pos.x += action.dir.x
-        actor.pos.y += action.dir.y
+        const moveTile = this.map.getTile(actor.pos.x + action.dir.x, actor.pos.y + action.dir.y);
+        if (!moveTile.canWalk) return false;
+
+        actor.pos.x += action.dir.x;
+        actor.pos.y += action.dir.y;
+
+        if (actor.isPlayer) {
+          this.map.updateMask(actor.pos.x, actor.pos.y)
+        }
+
         return true;
     }
 
@@ -39,8 +45,8 @@ export default class Turns {
   nextTurn() {
     this.turn++;
     this.index = (this.index + 1) % (this.entities.length)
-    console.log("INDEX:", this.index)    
-    if (this.index === 0) console.log('your turn')      
+    // console.log("INDEX:", this.index)
+    // if (this.index === 0) console.log('your turn')
   }
 
 }
