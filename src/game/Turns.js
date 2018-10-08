@@ -17,8 +17,13 @@ export default class Turns {
         const moveTile = this.map.getTile(actor.pos.x + action.dir.x, actor.pos.y + action.dir.y);
         if (!moveTile.canWalk) return false;
 
-        actor.pos.x += action.dir.x;
-        actor.pos.y += action.dir.y;
+        if (moveTile.type === 'door' && !moveTile.open) {
+          console.log('Opening Door')
+          this.map.setDoor(moveTile, 'open');
+        } else {
+          actor.pos.x += action.dir.x;
+          actor.pos.y += action.dir.y;
+        }
 
         if (actor.isPlayer) {
           this.map.updateMask(actor.pos.x, actor.pos.y)

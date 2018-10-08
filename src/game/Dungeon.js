@@ -89,10 +89,13 @@ const Door = () => {
     type: 'door',
     weight: 1,
     fillStyle: '#17d81b',
+    strokeStyle: '#17d81b',
+    renderStyle: 'fill',
+    open: false,
     canWalk: true,
-    canSeeThrough: true
+    canSeeThrough: false
   }
-}
+};
 
 const LineTest = () => {
   return {
@@ -159,8 +162,6 @@ class Map {
     const width = _width || getRandomArbitrary(7, 15);
     const height = _height || getRandomArbitrary(7, 15);
 
-    console.log(_x, _y, _width, _height);
-
     // Out of bounds check
     if ((y + height + 1) > mapHeight) return false;
     if ((x + width + 1) > mapWidth) return false;
@@ -169,8 +170,6 @@ class Map {
     for (let room of this.rooms) {
       if (AABB(addPadding({ x, y, width, height }), addPadding(room))) return false;
     }
-
-    console.log('HERE')
 
     const corners = [];
 
@@ -362,9 +361,16 @@ class Map {
         if (!this.map[y][x]) {
           this.ctx.fillStyle = "#ff00bf"
         } else {
-          this.ctx.fillStyle = this.map[y][x].fillStyle
+          this.ctx.strokeStyle = this.map[y][x].strokeStyle;
+          this.ctx.fillStyle = this.map[y][x].fillStyle;
         }
-        this.ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+
+        if (this.map[y][x].renderStyle && this.map[y][x].renderStyle === 'stroke') {
+          this.ctx.strokeRect(x * tileSize, y * tileSize, tileSize, tileSize)
+        } else {
+          this.ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+        }
+
       }
     }
   }
@@ -426,10 +432,21 @@ class Map {
     }
   }
 
+  setDoor(door, mode) {
+    if (mode === 'open') {
+      door.open = true;
+      door.canSeeThrough = true;
+      door.renderStyle = 'stroke'
+    }
+    if (mode === 'closed') {
+      door.open = false;
+      door.canSeeThrough = false;
+      door.renderStyle = 'fill'
+    }
+  }
+
   renderMask() {
     const { tileSize } = this;
-
-    // const graph = makeGraph(this.map, true);
 
     for (let y = 0; y < mapHeight; y++) {
       for (let x = 0; x < mapWidth; x++) {
@@ -437,16 +454,6 @@ class Map {
         this.ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
       }
     }
-
-
-    // for (let i in this.rooms) {
-    //   const room = this.rooms[i]
-    //   this.ctx.font = "12px Arial";
-    //   this.ctx.fillStyle = "#000000"
-    //   this.ctx.fillText(i, room.center.x * this.tileSize, room.center.y * this.tileSize);
-    // }
-
-    // return;
   }
 }
 
