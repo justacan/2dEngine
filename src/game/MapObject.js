@@ -14,6 +14,7 @@ export default class MapObject {
     getCell(x, y) {
         const { width } = this;
         const index = x + width * y;
+        if(typeof this.map[index] === 'undefined') return false;
         return this.map[index];
     }
 
@@ -28,14 +29,15 @@ export default class MapObject {
     }
 
     iterateRange(startX, startY, endX, endY, func) {
-        for (let x = startX; x < endX; x++) {
-            for (let y = startY; y < endY; y++) {
+        for (let y = startY; y < endY; y++) {
+            for (let x = startX; x < endX; x++) {
                 func(this.makeCellObjectFromCoord(x, y));
             }
         }
     }
 
     makeCellObjectFromCoord(x, y) {
+        const { width } = this;
         const index = x + width * y;
         const value = this.map[index];
         return {x, y, index, value}

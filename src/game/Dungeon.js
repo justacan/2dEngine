@@ -28,7 +28,7 @@ const Floor = () => {
   return {
     type: 'floor',
     weight: 1,
-    fillStyle: '#47361a',
+    fillStyle: '#303638',
     canWalk: true,
     canSeeThrough: true
   }
@@ -48,7 +48,8 @@ const WallCorner = () => {
   return {
     type: 'wall',
     weight: 0,
-    fillStyle: '#09b2e5',
+    fillStyle: '#aab4b7',
+    // fillStyle: '#09b2e5',
     canWalk: false,
     canSeeThrough: false
   }
@@ -67,8 +68,8 @@ const Door = () => {
   return {
     type: 'door',
     weight: 1,
-    fillStyle: '#17d81b',
-    strokeStyle: '#17d81b',
+    fillStyle: '#603f2b',
+    strokeStyle: '#603f2b',
     renderStyle: 'fill',
     open: false,
     canWalk: true,
@@ -235,6 +236,21 @@ class Dungeon {
       }
     }    
 
+    this.map.iterate(cellObject => {
+      const {x, y, value} = cellObject;
+      if (value.type === 'floor') {        
+        for(let _x = x-1; _x <= x+1; _x++) {
+          for(let _y = y-1; _y <= y+1; _y++) {
+            const ce = this.map.getCell(_x, _y);            
+            if (!ce) continue;
+            if (ce.type === 'void') {              
+              this.map.setCell(_x, _y, Wall());
+            }
+          }
+        }        
+      }
+    })
+
     // make doors
     for (let room of this.rooms) {
       for (let y = room.y; y < room.height + room.y; y++) {
@@ -247,20 +263,6 @@ class Dungeon {
           }
         }
       }     
-    }
-
-    // make mask    
-
-    for (let y = 0; y < mapHeight; y++) {
-      for (let x = 0; x < mapWidth; x++) {       
-        if (this.map.getCell(x, y).type !== 'void') {
-          this.mask.setCell(x, y, 1)
-          // this.mask[y][x] = 1
-        } else {
-          this.mask.setCell(x, y, 0)
-          // this.mask[y][x] = 0
-        }
-      }
     }
   }
 
