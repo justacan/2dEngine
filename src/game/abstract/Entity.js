@@ -8,6 +8,7 @@ export default class Entity {
     this.isPlayer = isPlayer
     this.size = {width, height};
     this.action = false;
+    this.canSee = [];
     this.canvas;
     this.ctx;
   }

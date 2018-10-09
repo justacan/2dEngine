@@ -16,10 +16,13 @@ class Player extends Entity {
     if (this.action) {
       return this.action;
     }
-    this.update();    
   }
 
-  update(afterTurn) {
+  clearAction() {
+    this.action = false;
+  }
+
+  update() {
     if (this.keyLock) return false;
 
     const keys = this.keyHandler.getPressed();
@@ -40,8 +43,8 @@ class Player extends Entity {
     }
 
     if (Object.values(keys).some(e => e)) {
-      // this.keyLock = true;
-      // setTimeout(() => {this.keyLock = false}, 0);
+      this.keyLock = true;
+      setTimeout(() => {this.keyLock = false}, 150);
     }
 
   };

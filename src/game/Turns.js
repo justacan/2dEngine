@@ -1,9 +1,9 @@
 export default class Turns {
-  constructor(entities, map) {
+  constructor(entities, Dungeon) {
     this.entities = entities;
     this.turn = 0;
     this.index = 0;
-    this.map = map;
+    this.Dungeon = Dungeon;
     // this.wait = false;
   }
 
@@ -14,7 +14,7 @@ export default class Turns {
   actionHandler(action, actor) {
     switch (action.name) {
       case 'MOVE':        
-        const moveTile = this.map.getTile(actor.pos.x + action.dir.x, actor.pos.y + action.dir.y);
+        const moveTile = this.Dungeon.map.getCell(actor.pos.x + action.dir.x, actor.pos.y + action.dir.y);
 
         if (!moveTile.canWalk) {
           this.nextTurn();
@@ -23,14 +23,14 @@ export default class Turns {
 
         if (moveTile.type === 'door' && !moveTile.open) {
           console.log('Opening Door')
-          this.map.setDoor(moveTile, 'open');
+          this.Dungeon.setDoor(moveTile, 'open');
         } else {
           actor.pos.x += action.dir.x;
           actor.pos.y += action.dir.y;
         }
 
         if (actor.isPlayer) {
-          this.map.updateMask(actor)
+          // this.Dungeon.updateMask(actor)
         }
 
         return true;
@@ -40,9 +40,10 @@ export default class Turns {
 
   update() {    
     const actor = this.entities[this.index];    
-    const action = actor.getAction()
+    const action = actor.getAction()    
+    // console.log(actor.name, action)
     if ( action ) {      
-      actor.action = false;
+      actor.clearAction();
       const success = this.actionHandler(action, actor);      
       if (success) {
         this.nextTurn();

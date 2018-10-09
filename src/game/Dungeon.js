@@ -1,39 +1,13 @@
 import AABB from "./AABB";
 
-import { astar, Graph } from './lib/astar';
+import { astar } from './lib/astar';
 
 import config from './config'
 
 const {mapWidth, mapHeight, tileSize} = config;
 
+import MapObject from './MapObject';
 
-
-
-
-
-const makeGraph = (map, onlyFloors = false) => {
-  const grid = [];  
-
-  for (let y = 0; y < mapHeight; y++) {
-    for (let x = 0; x < mapWidth; x++) {
-      if (!grid[y]) grid[y] = [];
-      grid[y][x] = undefined;
-    }
-  }
-
-  for (let y = 0; y < mapHeight; y++) {
-    for (let x = 0; x < mapWidth; x++) {
-      if (!grid[y]) grid[y] = []
-      if (onlyFloors) {
-        grid[x][y] = (map[y][x].type === 'floor') ? 1 : 0;
-      } else {
-        grid[x][y] = map[y][x].weight;
-      }
-    }
-  }
-
-  return new Graph(grid);
-};
 
 function getRandomArbitrary(min, max) {
   return Math.round(Math.random() * (max - min) + min);
@@ -111,34 +85,15 @@ const LineTest = () => {
 }
 
 
-class Map {
+class Dungeon {
   constructor(canvas, ctx) {
-    this.map = [];
-    this.mask = [];
+    this.map = new MapObject(mapWidth, mapHeight, Void());    
+    this.mask = new MapObject(mapWidth, mapHeight, 1);
     this.rooms = [];
     this.roomCounter = 0;
     this.canvas = canvas;
     this.ctx = ctx;
-
-    this.backbuffer = document.createElement('canvas');
-    this.backbuffer.id = 'backbuffer';
-    this.backbuffer.width = this.canvas.width;
-    this.backbuffer.height = this.canvas.height;
-  }
-
-  registerCanvas(canvas, ctx) {
-    this.canvas = canvas;
-    this.ctx = ctx;
-  }
-
-  iterate(func) {
-    // const { width, height } = this;
-    for (let y = 0; y < mapHeight; y++) {
-      for (let x = 0; x < mapWidth; x++) {
-        func(x, y);
-      }
-    }
-  }
+  } 
 
   findClosestRoom(room, filtered = false) {
     let closest = null;
@@ -180,14 +135,14 @@ class Map {
     for (let iY = y; iY < y + height; iY++) {
       for (let iX = x; iX < x + width; iX++) {
         if (iY === y || iX === x || iY === y + height - 1 || iX === x + width - 1) {
-          this.setTile(iX, iY, Wall());
+          this.map.setCell(iX, iY, Wall());          
         } else {
-          this.setTile(iX, iY, Floor());
+          this.map.setCell(iX, iY, Floor());          
         }
-        if (iX === x && iY === y) this.setTile(iX, iY, WallCorner())
-        if (iX === x + width - 1 && iY === y) this.setTile(iX, iY, WallCorner())
-        if (iX === x && iY === y + height - 1) this.setTile(iX, iY, WallCorner())
-        if (iX === x + width - 1 && iY === y + height - 1) this.setTile(iX, iY, WallCorner())
+        if (iX === x && iY === y) this.map.setCell(iX, iY, WallCorner())
+        if (iX === x + width - 1 && iY === y) this.map.setCell(iX, iY, WallCorner())
+        if (iX === x && iY === y + height - 1) this.map.setCell(iX, iY, WallCorner())
+        if (iX === x + width - 1 && iY === y + height - 1) this.map.setCell(iX, iY, WallCorner())
 
       }
     }
@@ -198,24 +153,7 @@ class Map {
     console.log("Room Placed!")
 
   }
-
-  getTile(x, y) {
-    try {
-      return this.map[y][x]
-    } catch (e) {
-      return false;
-    }
-  }
-
-  setTile(x, y, value) {
-    try {
-      this.map[y][x] = {x, y, ...value};
-    } catch (e) {
-      return false;
-    }
-
-  }
-
+  
   connectRooms(room1, room2) {
     if (!room1.connected) room1.connected = [];
     if (!room2.connected) room2.connected = [];
@@ -231,29 +169,25 @@ class Map {
     }
   }
 
-  generate() {
-    this.iterate((x, y) => {
-      if (!this.map[y]) this.map[y] = []
-      this.setTile(x, y, Void());
-    });
+  generate() {    
 
     for (let i = 0; i < config.roomCreationAttempts; i++) {
       this.placeRoom();
     }
 
-    this.findRoomCenters();
+    this.findRoomCenters(); 
 
     for (let room of this.rooms) {
-      const graphWithWeight = makeGraph(this.map);
+      const graphWithWeight = this.map.makeGraph();      
       const closest = this.findClosestRoom(room);
       const start = graphWithWeight.grid[room.center.x][room.center.y];
       const end = graphWithWeight.grid[closest.center.x][closest.center.y];
       const resultWithWeight = astar.search(graphWithWeight, start, end);
       for (let res of resultWithWeight) {
-        this.setTile(res.x, res.y, Floor())
+        this.map.setCell(res.x, res.y, Floor())
       }
-      this.connectRooms(room, closest);
-    }
+      this.connectRooms(room, closest);      
+    }    
 
     // Fix Islands
     while (true) {
@@ -261,13 +195,11 @@ class Map {
       let notConnected = [];
       const firstRoom = this.rooms[0];
       for (let room of this.rooms) {        
-        const graph = makeGraph(this.map, true);
+        const graph = this.map.makeGraph(true);
         const start = graph.grid[firstRoom.center.x][firstRoom.center.y];
         const end = graph.grid[room.center.x][room.center.y];
         const results = astar.search(graph, start, end);
-
-        if (results.length) areConnected.push(room)
-        // console.log(results.length);
+        if (results.length) areConnected.push(room)        
       }
 
       areConnected.unshift(firstRoom)
@@ -287,70 +219,62 @@ class Map {
       try {
         const firstUp = notConnected.pop();      
         if (!firstUp) break;
-        const graphWithWeight = makeGraph(this.map);
+        const graphWithWeight = this.map.makeGraph();
         const closest = this.findClosestRoom(firstUp, areConnected);
         const start = graphWithWeight.grid[firstUp.center.x][firstUp.center.y];
         const end = graphWithWeight.grid[closest.center.x][closest.center.y];
         const resultWithWeight = astar.search(graphWithWeight, start, end);
         for (let res of resultWithWeight) {
-          this.setTile(res.x, res.y, Floor())
+          this.map.setCell(res.x, res.y, Floor())
         }
         this.connectRooms(firstUp, closest);
-      } catch (e) {
-        // this.render()
+      } catch (e) {        
         console.log("BROKE")
+        console.log(e)
         break;        
       }
-    }
+    }    
 
     // make doors
     for (let room of this.rooms) {
       for (let y = room.y; y < room.height + room.y; y++) {
         for (let x = room.x; x < room.width + room.x; x++) {
           if (x === room.x || y === room.y || x === room.width + room.x - 1 || y === room.height + room.y - 1) {
-            if (this.map[y][x].type === 'floor') {
-              this.setTile(x, y, Door());
+            if (this.map.getCell(x, y).type === 'floor') {
+              this.map.setCell(x, y, Door());
             }
             
           }
         }
       }     
-      // return;
     }
 
-    // make mask
+    // make mask    
 
     for (let y = 0; y < mapHeight; y++) {
-      for (let x = 0; x < mapWidth; x++) {
-        if (!this.mask[y]) this.mask[y] = [];
-        if (this.getTile(x, y).type !== 'void') {
-          this.mask[y][x] = 1
+      for (let x = 0; x < mapWidth; x++) {       
+        if (this.map.getCell(x, y).type !== 'void') {
+          this.mask.setCell(x, y, 1)
+          // this.mask[y][x] = 1
         } else {
-          this.mask[y][x] = 0
+          this.mask.setCell(x, y, 0)
+          // this.mask[y][x] = 0
         }
       }
     }
   }
 
   render() {
-    // const { tileSize } = this;
-    for (let y = 0; y < mapHeight; y++) {
-      for (let x = 0; x < mapWidth; x++) {
-        if (!this.map[y][x]) {
-          this.ctx.fillStyle = "#ff00bf"
-        } else {
-          this.ctx.strokeStyle = this.map[y][x].strokeStyle;
-          this.ctx.fillStyle = this.map[y][x].fillStyle;
-        }
-
-        if (this.map[y][x].renderStyle && this.map[y][x].renderStyle === 'stroke') {
-          this.ctx.strokeRect(x * tileSize, y * tileSize, tileSize, tileSize)
-        } else {
-          this.ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
-        }
-
+    this.map.iterate((cellObject) => {
+      const { x, y, value } = cellObject;
+      this.ctx.strokeStyle = value.strokeStyle;
+      this.ctx.fillStyle = value.fillStyle;
+      if (value.renderStyle && value.renderStyle === 'stroke') {
+        this.ctx.strokeRect(x * tileSize, y * tileSize, tileSize, tileSize)
+      } else {
+        this.ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
       }
-    }
+    });
   }
 
   line(x0, y0, x1, y1) {
@@ -361,9 +285,7 @@ class Map {
     let err = dx-dy;
 
     while(true) {
-      // this.setPixel(x0,y0, 4);  // Do what you need to for this
-
-      const tile = this.getTile(x0, y0);
+      const tile = this.map.getCell(x0, y0);
       if (!tile) continue;
       if (!tile.canSeeThrough) return {x: x0, y: y0};
 
@@ -375,42 +297,48 @@ class Map {
     return true;
   }
 
-  updateMask(playerObj) {
+  getMask(actorObj) {
+    const radius = actorObj.viewRadius;
+    const actorX = actorObj.pos.x;
+    const actorY = actorObj.pos.y;
+    const canSee = [];
 
-    const radius = playerObj.viewRadius;
-    const playerX = playerObj.pos.x;
-    const playerY = playerObj.pos.y;
-
-    const extras = [];
-
-    for(let y = 0;y < mapHeight; y++) {
-      for(let x = 0;x < mapHeight; x++) {
-        if (this.mask[y][x] === 0) this.mask[y][x] = .5
+    for (let y = actorY + -(radius); y <= actorY + (radius); y++) {
+      for (let x = actorX + -(radius); x <= actorX + (radius); x++) {
+        const res = this.line(actorX, actorY, x, y);        
+        if(res === true) canSee.push({x, y})
+        if (res.x && res.y) canSee.push({x: res.x, y: res.y});
       }
     }
+    actorObj.canSee = canSee;
+  }
 
-    for (let y = playerY + -(radius); y <= playerY + (radius); y++) {
-      for (let x = playerX + -(radius); x <= playerX + (radius); x++) {
-        const res = this.line(playerX, playerY, x, y);
-        if(res === true) this.setMask(x, y, 0);
-        if (res.x && res.y) extras.push(res)
-      }
-    }
+  updateMask(playerObj) {    
 
-    for (let extra of extras) {
-      const {x, y} = extra;
-      this.setMask(x, y, 0);
-    }
+    // set half bright everywhere that has be uncovered
+    this.mask.iterate((cellObject) => {      
+      if (cellObject.value === 0) this.mask.setCellByIndex(cellObject.index, .5);      
+    });
+
+    playerObj.canSee.forEach(e => {
+      this.mask.setCell(e.x, e.y, 0);
+    })
+
+    // set full bright everywhere seen
+    // for (let y = playerY + -(radius); y <= playerY + (radius); y++) {
+      // for (let x = playerX + -(radius); x <= playerX + (radius); x++) {
+        // const res = this.line(playerX, playerY, x, y);        
+        // if(res === true) this.mask.setCell(x, y, 0);
+        // if (res.x && res.y) this.mask.setCell(res.x, res.y, 0);
+      // }
+    // }
+
+    
+
+    // playerObj.canSee = 
 
   }
 
-  setMask (x, y, value) {
-    try {
-      this.mask[y][x] = value
-    } catch (e) {
-      return false;
-    }
-  }
 
   setDoor(door, mode) {
     if (mode === 'open') {
@@ -426,15 +354,12 @@ class Map {
   }
 
   renderMask() {
-    // const { tileSize } = this;
-
-    for (let y = 0; y < mapHeight; y++) {
-      for (let x = 0; x < mapWidth; x++) {
-        this.ctx.fillStyle = `rgba(0,0,0,${this.mask[y][x]})`;
+    this.mask.iterate((cellObject) => {
+        const {x, y, value} = cellObject;
+        this.ctx.fillStyle = `rgba(0,0,0,${value})`;
         this.ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
-      }
-    }
+    });
   }
 }
 
-export default Map;
+export default Dungeon;

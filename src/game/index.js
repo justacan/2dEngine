@@ -1,7 +1,7 @@
 import Mob from './Mob';
 import Player from './Player'
 import Turns from './Turns';
-import Map from './Dungeon';
+import Dungeon from './Dungeon';
 
 class GUI {
   constructor(canvas, ctx) {
@@ -29,7 +29,7 @@ class Game {
       then: Date.now()
     };
     this.turnTakers;
-    this.map;
+    this.Dungeon;
     this.gui = new GUI(this.canvas, this.ctx);
 
   }
@@ -42,36 +42,33 @@ class Game {
 
     let tt = [];
 
-    this.map = new Map(this.canvas, this.ctx);   
+    this.Dungeon = new Dungeon(this.canvas, this.ctx);   
     // this.map.mapSize(50, 50);
-    this.map.generate();
+    this.Dungeon.generate();
     // this.map.testGenerate();
 
-
-
-    const firstRoom = this.map.rooms[0];
+    const firstRoom = this.Dungeon.rooms[0];
 
     const player = new Player('Player', firstRoom.center.x, firstRoom.center.y);
     player.registerCanvas(this.canvas, this.ctx);    
 
+    
+    this.Dungeon.getMask(player)
+    this.Dungeon.updateMask(player);
+    
     tt.push(player);
-    this.map.updateMask(player);
 
     for (let i = 1; i < 5; i++) {
-      const room = this.map.rooms[i];
+      const room = this.Dungeon.rooms[i];
       let m = new Mob('Yolo', room.center.x, room.center.y);
       m.registerCanvas(this.canvas, this.ctx);
       tt.push(m);
     }
     
 
-    this.turnTakers = new Turns(tt, this.map);
+    this.turnTakers = new Turns(tt, this.Dungeon);
 
     requestAnimationFrame(() => this.loop())
-  }
-
-  setPixel(x, y, toWhat) {
-    this.map[y][x] = toWhat
   }
 
   loop() {
@@ -80,25 +77,30 @@ class Game {
     this.time.now = Date.now();
     const delta = (this.time.now - this.time.then) / 1000;
     this.time.then = this.time.now;
+    const player = this.turnTakers.entities[0];
+    this.Dungeon.render();
+    this.Dungeon.getMask(player);
+    this.Dungeon.updateMask(player);
+    this.Dungeon.renderMask();
 
-    this.map.render();
-
-    // this.grid();
-
-    // this.line(
-    //   this.turnTakers.entities[0].pos.x,
-    //   this.turnTakers.entities[0].pos.y,
-    //   this.turnTakers.entities[1].pos.x,
-    //   this.turnTakers.entities[1].pos.y
-    // );
-    //
-    this.turnTakers.update();
+    
     this.turnTakers.entities.forEach(tt => {
-      tt.render();
-    });
+      tt.update();
+    })
+    this.turnTakers.update();
+    for (let tt of this.turnTakers.entities) {
+      if (tt === player) {
+        tt.render();
+        continue;
+      }
+      if (_.find(player.canSee, e => e.x === tt.pos.x && e.y === tt.pos.y))  {
+        tt.render();
+      }
+      
+    }
 
     this.gui.render();
-    this.map.renderMask();
+    
 
     requestAnimationFrame(() => this.loop());
   }

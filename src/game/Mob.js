@@ -10,8 +10,14 @@ class Mob extends Entity {
     if (this.action) {
       return this.action;
     }
+  }
+
+  clearAction() {
+    this.action = false;
+  }
+
+  update() {
     this.action = Move(_.sample(dirs));
-    
   }
 
   render() {
