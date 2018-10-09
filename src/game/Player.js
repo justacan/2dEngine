@@ -6,6 +6,7 @@ import Move from './actions/move'
 class Player extends Entity {
   constructor(name, x, y) {
     super("Player", x, y, true);
+    this.viewRadius = 8;
     this.keyLock = false;
     this.keyHandler = new KeyHandler();
     this.keyHandler.startEventHandler();
@@ -39,8 +40,8 @@ class Player extends Entity {
     }
 
     if (Object.values(keys).some(e => e)) {
-      this.keyLock = true;
-      setTimeout(() => {this.keyLock = false}, 150);      
+      // this.keyLock = true;
+      // setTimeout(() => {this.keyLock = false}, 0);
     }
 
   };

@@ -15,7 +15,11 @@ export default class Turns {
     switch (action.name) {
       case 'MOVE':        
         const moveTile = this.map.getTile(actor.pos.x + action.dir.x, actor.pos.y + action.dir.y);
-        if (!moveTile.canWalk) return false;
+
+        if (!moveTile.canWalk) {
+          this.nextTurn();
+          return false;
+        };
 
         if (moveTile.type === 'door' && !moveTile.open) {
           console.log('Opening Door')
@@ -26,7 +30,7 @@ export default class Turns {
         }
 
         if (actor.isPlayer) {
-          this.map.updateMask(actor.pos.x, actor.pos.y)
+          this.map.updateMask(actor)
         }
 
         return true;

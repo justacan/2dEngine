@@ -2,8 +2,13 @@ import AABB from "./AABB";
 
 import { astar, Graph } from './lib/astar';
 
-const mapWidth = 50;
-const mapHeight = 50;
+import config from './config'
+
+const {mapWidth, mapHeight, tileSize} = config;
+
+
+
+
 
 
 const makeGraph = (map, onlyFloors = false) => {
@@ -28,7 +33,7 @@ const makeGraph = (map, onlyFloors = false) => {
   }
 
   return new Graph(grid);
-}
+};
 
 function getRandomArbitrary(min, max) {
   return Math.round(Math.random() * (max - min) + min);
@@ -111,11 +116,14 @@ class Map {
     this.map = [];
     this.mask = [];
     this.rooms = [];
+    this.roomCounter = 0;
     this.canvas = canvas;
     this.ctx = ctx;
-    this.tileSize = 16;
-    // this.width = this.canvas.width / this.tileSize;
-    // this.height = this.canvas.height / this.tileSize;
+
+    this.backbuffer = document.createElement('canvas');
+    this.backbuffer.id = 'backbuffer';
+    this.backbuffer.width = this.canvas.width;
+    this.backbuffer.height = this.canvas.height;
   }
 
   registerCanvas(canvas, ctx) {
@@ -136,7 +144,6 @@ class Map {
     let closest = null;
     const rooms = filtered || this.rooms
     for (let iRoom of rooms) {
-      // if (room.center.x === iRoom.center.x && room.center.y === iRoom.center.y) continue;
       if (room === iRoom) continue;
       if (iRoom.connected.includes(room)) continue;
       if (!closest) closest = iRoom;
@@ -154,13 +161,11 @@ class Map {
     return closest;
   }
 
-  roomCounter = 0;
-
   placeRoom(_x, _y, _width, _height) {
     const x = _x || getRandomArbitrary(1, mapWidth - 1);
     const y = _y || getRandomArbitrary(1, mapHeight - 1);
-    const width = _width || getRandomArbitrary(7, 15);
-    const height = _height || getRandomArbitrary(7, 15);
+    const width = _width || getRandomArbitrary(config.minRoomWidth, config.maxRoomWidth);
+    const height = _height || getRandomArbitrary(config.minRoomHeight, config.maxRoomHeight);
 
     // Out of bounds check
     if ((y + height + 1) > mapHeight) return false;
@@ -170,8 +175,6 @@ class Map {
     for (let room of this.rooms) {
       if (AABB(addPadding({ x, y, width, height }), addPadding(room))) return false;
     }
-
-    const corners = [];
 
     // Apply room to map
     for (let iY = y; iY < y + height; iY++) {
@@ -190,8 +193,8 @@ class Map {
     }
 
     // Save room to be checked for overlap
-    this.rooms.push({ index: this.roomCounter, x, y, width, height, connected: [], corners });
-    this.roomCounter++
+    this.rooms.push({ index: this.roomCounter, x, y, width, height, connected: []});
+    this.roomCounter++;
     console.log("Room Placed!")
 
   }
@@ -225,7 +228,6 @@ class Map {
       let x = Math.floor(room.width / 2) + room.x;
       let y = Math.floor(room.height / 2) + room.y;
       room.center = { x, y };
-      // this.setTile(x, y, RoomCenter())
     }
   }
 
@@ -235,7 +237,7 @@ class Map {
       this.setTile(x, y, Void());
     });
 
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < config.roomCreationAttempts; i++) {
       this.placeRoom();
     }
 
@@ -330,32 +332,8 @@ class Map {
     }
   }
 
-  testGenerate() {
-      this.iterate((x, y) => {
-        if (!this.map[y]) this.map[y] = []
-        this.setTile(x, y, Void());
-      });
-
-      this.placeRoom(1, 1, 10, 10);
-
-      this.findRoomCenters();
-
-      for (let y = 0; y < mapHeight; y++) {
-        for (let x = 0; x < mapWidth; x++) {
-        if (!this.mask[y]) this.mask[y] = [];
-        if (this.getTile(x, y).type !== 'void') {
-          this.mask[y][x] = 1
-        } else {
-          this.mask[y][x] = 0
-        }
-      }
-    }
-  }
-
-
-
   render() {
-    const { tileSize } = this;
+    // const { tileSize } = this;
     for (let y = 0; y < mapHeight; y++) {
       for (let x = 0; x < mapWidth; x++) {
         if (!this.map[y][x]) {
@@ -397,9 +375,11 @@ class Map {
     return true;
   }
 
-  updateMask(playerX, playerY) {
+  updateMask(playerObj) {
 
-    const radius = 4;
+    const radius = playerObj.viewRadius;
+    const playerX = playerObj.pos.x;
+    const playerY = playerObj.pos.y;
 
     const extras = [];
 
@@ -418,7 +398,7 @@ class Map {
     }
 
     for (let extra of extras) {
-      const {x, y} = extra
+      const {x, y} = extra;
       this.setMask(x, y, 0);
     }
 
@@ -446,7 +426,7 @@ class Map {
   }
 
   renderMask() {
-    const { tileSize } = this;
+    // const { tileSize } = this;
 
     for (let y = 0; y < mapHeight; y++) {
       for (let x = 0; x < mapWidth; x++) {

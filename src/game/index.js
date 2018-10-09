@@ -55,7 +55,7 @@ class Game {
     player.registerCanvas(this.canvas, this.ctx);    
 
     tt.push(player);
-    this.map.updateMask(player.pos.x, player.pos.y)
+    this.map.updateMask(player);
 
     for (let i = 1; i < 5; i++) {
       const room = this.map.rooms[i];
