@@ -16,12 +16,12 @@ export default class Turns {
       case 'MOVE':        
         const moveTile = this.Dungeon.map.getCell(actor.pos.x + action.dir.x, actor.pos.y + action.dir.y);
 
-        if (!moveTile.canWalk) {
+        if (!moveTile.value.canWalk) {
           this.nextTurn();
           return false;
         };
 
-        if (moveTile.type === 'door' && !moveTile.open) {
+        if (moveTile.value.type === 'door' && !moveTile.value.open) {
           console.log('Opening Door')
           this.Dungeon.setDoor(moveTile, 'open');
         } else {

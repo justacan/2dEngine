@@ -15,7 +15,8 @@ export default class MapObject {
         const { width } = this;
         const index = x + width * y;
         if(typeof this.map[index] === 'undefined') return false;
-        return this.map[index];
+        const value = this.map[index];
+        return {x, y, value, index}
     }
 
     setCell(x, y, value) {

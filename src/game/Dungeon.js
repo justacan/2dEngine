@@ -8,7 +8,6 @@ const {mapWidth, mapHeight, tileSize} = config;
 
 import MapObject from './MapObject';
 
-
 function getRandomArbitrary(min, max) {
   return Math.round(Math.random() * (max - min) + min);
 }
@@ -87,13 +86,14 @@ const LineTest = () => {
 
 
 class Dungeon {
-  constructor(canvas, ctx) {
+  constructor(game) {
     this.map = new MapObject(mapWidth, mapHeight, Void());    
     this.mask = new MapObject(mapWidth, mapHeight, 1);
     this.rooms = [];
     this.roomCounter = 0;
-    this.canvas = canvas;
-    this.ctx = ctx;
+    this.game = game;
+    this.canvas = game.canvas;
+    this.ctx = game.ctx;
   } 
 
   findClosestRoom(room, filtered = false) {
@@ -243,8 +243,8 @@ class Dungeon {
           for(let _y = y-1; _y <= y+1; _y++) {
             const ce = this.map.getCell(_x, _y);            
             if (!ce) continue;
-            if (ce.type === 'void') {              
-              this.map.setCell(_x, _y, Wall());
+            if (ce.value.type === 'void') {              
+              this.map.setCell(ce.x, ce.y, Wall());
             }
           }
         }        
@@ -256,7 +256,7 @@ class Dungeon {
       for (let y = room.y; y < room.height + room.y; y++) {
         for (let x = room.x; x < room.width + room.x; x++) {
           if (x === room.x || y === room.y || x === room.width + room.x - 1 || y === room.height + room.y - 1) {
-            if (this.map.getCell(x, y).type === 'floor') {
+            if (this.map.getCell(x, y).value.type === 'floor') {
               this.map.setCell(x, y, Door());
             }
             
@@ -289,7 +289,7 @@ class Dungeon {
     while(true) {
       const tile = this.map.getCell(x0, y0);
       if (!tile) continue;
-      if (!tile.canSeeThrough) return {x: x0, y: y0};
+      if (!tile.value.canSeeThrough) return {x: x0, y: y0};
 
       if ((x0 === x1) && (y0 === y1)) break;
       let e2 = 2*err;
@@ -342,16 +342,17 @@ class Dungeon {
   }
 
 
-  setDoor(door, mode) {
+  setDoor(door, mode) {       
     if (mode === 'open') {
-      door.open = true;
-      door.canSeeThrough = true;
-      door.renderStyle = 'stroke'
+      door.value.open = true;
+      door.value.canSeeThrough = true;
+      door.value.renderStyle = 'stroke'
+      this.game.addEffect(door.x, door.y);
     }
     if (mode === 'closed') {
-      door.open = false;
-      door.canSeeThrough = false;
-      door.renderStyle = 'fill'
+      door.value.open = false;
+      door.value.canSeeThrough = false;
+      door.value.renderStyle = 'fill'
     }
   }
 

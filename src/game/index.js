@@ -3,12 +3,59 @@ import Player from './Player'
 import Turns from './Turns';
 import Dungeon from './Dungeon';
 
+import config from './config';
+
+class Effect {
+  constructor(x, y) {
+    console.log(x,y)
+    this.x = x;
+    this.y = y;        
+    this.startSize = 10;    
+    this.endSize = 250;    
+    this.size = this.startSize;
+    this.frameCount = 0;
+    this.index = 1;
+    this.delta = 0
+  }
+
+  update(delta) {    
+    this.size = this.size + delta * 150
+    this.delta += delta;
+    console.log(this.delta)
+  }
+
+  render(ctx) {    
+    const {x, y, size, endSize} = this;
+    const {tileSize} = config;           
+    
+    if (size > endSize) return false;
+
+    ctx.strokeStyle='#ef4a13'
+    ctx.lineWidth = 1      
+
+    const spacing = 25
+
+    for (let i = 1; i < 4; i++) {
+      ctx.strokeRect(
+        x * tileSize - (size / 2) + (tileSize/2) - (i * spacing / 2), 
+        y * tileSize - (size / 2) + (tileSize/2) - (i * spacing / 2), 
+        size + (i * spacing),
+        size + (i * spacing)
+      );
+
+    }
+
+    return true;
+    
+  }
+}
+
 class GUI {
   constructor(canvas, ctx) {
     this.canvas = canvas;
     this.ctx = ctx;
     this.startX = 801
-  }
+  }  
 
   render() {
     const {ctx} = this;
@@ -30,6 +77,7 @@ class Game {
     };
     this.turnTakers;
     this.Dungeon;
+    this.effects = [];
     this.gui = new GUI(this.canvas, this.ctx);
 
   }
@@ -38,11 +86,15 @@ class Game {
     this.ctx.clearRect(0,0,this.canvas.width, this.canvas.height);
   }
 
+  addEffect(x, y) {
+    this.effects.push(new Effect(x, y))
+  }
+
   load() {
 
     let tt = [];
 
-    this.Dungeon = new Dungeon(this.canvas, this.ctx);   
+    this.Dungeon = new Dungeon(this);   
     // this.map.mapSize(50, 50);
     this.Dungeon.generate();
     // this.map.testGenerate();
@@ -72,8 +124,8 @@ class Game {
   }
 
   loop() {
+    
     this.clearScreen();
-
     this.time.now = Date.now();
     const delta = (this.time.now - this.time.then) / 1000;
     this.time.then = this.time.now;
@@ -83,6 +135,12 @@ class Game {
     this.Dungeon.updateMask(player);
     this.Dungeon.renderMask();
 
+    this.effects.forEach((e, i, a) => {
+      e.update(delta);
+      const stillGoing = e.render(this.ctx);
+      if (!stillGoing) a.splice(i, 1);
+    });
+    
     
     this.turnTakers.entities.forEach(tt => {
       tt.update();
@@ -95,14 +153,36 @@ class Game {
       }
       if (_.find(player.canSee, e => e.x === tt.pos.x && e.y === tt.pos.y))  {
         tt.render();
-      }
-      
+      }      
     }
 
-    this.gui.render();
+    // this.test(player, this.ctx);
     
 
+    // this.gui.render();
+    
+    
     requestAnimationFrame(() => this.loop());
+  }
+
+  test(player, ctx) {
+    const {tileSize} = config;
+    const {x,y} = player.pos;    
+    const size = 60;
+    const spacing = 25;    
+
+    ctx.strokeStyle='#ef4a13'
+    ctx.lineWidth = 1;
+
+    for (let i = 1; i < 4; i++) {
+      ctx.strokeRect(
+        x * tileSize - (size / 2) + (tileSize/2) - (i * spacing / 2), 
+        y * tileSize - (size / 2) + (tileSize/2) - (i * spacing / 2), 
+        size + (i * spacing),
+        size + (i * spacing)
+      );
+    }   
+
   }
 
 }
