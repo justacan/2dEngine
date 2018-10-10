@@ -206,16 +206,16 @@ class Dungeon {
       areConnected.unshift(firstRoom)
       notConnected = this.rooms.filter(e => !areConnected.includes(e))
 
-      console.log('areConnected:', areConnected.length);
-      console.log('notConnected:', notConnected.length);
-      console.log('rooms', this.rooms.length)
+      // console.log('areConnected:', areConnected.length);
+      // console.log('notConnected:', notConnected.length);
+      // console.log('rooms', this.rooms.length)
 
       if (areConnected.length === this.rooms.length) {
-        console.log("ALL CONNECTED");
+        // console.log("ALL CONNECTED");
         break;
       }      
       
-      console.log("Fixing Island!");
+      // console.log("Fixing Island!");
 
       try {
         const firstUp = notConnected.pop();      

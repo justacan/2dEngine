@@ -7,5 +7,6 @@ const directions = {
 }
 
 export default (direction) => {
-    return {name: "MOVE", dir: directions[direction]}
+    if (typeof direction === 'string') return {name: "MOVE", dir: directions[direction]}
+    if (typeof direction === 'object') return {name: "MOVE", dir: direction}
 }

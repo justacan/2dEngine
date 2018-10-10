@@ -1,9 +1,16 @@
+import Move from './actions/move';
+
+function handleMove(actor, action) {
+
+}
+
 export default class Turns {
   constructor(entities, Dungeon) {
     this.entities = entities;
     this.turn = 0;
     this.index = 0;
     this.Dungeon = Dungeon;
+    this.player = this.entities[0];
     // this.wait = false;
   }
 
@@ -12,8 +19,22 @@ export default class Turns {
   }
 
   actionHandler(action, actor) {
+    if (actor.name === 'Player') console.log(actor.name, action.name)
     switch (action.name) {
-      case 'MOVE':        
+      case 'LOCATE_PLAYER':
+      this.nextTurn();
+      return false;
+      const path = this.Dungeon.map.findPath(actor.pos.x, actor.pos.y, this.player.pos.x, this.player.pos.y);      
+      if (path.length) {
+        const x = path[0].x - actor.pos.x;
+        const y = path[0].y - actor.pos.y
+        this.action = Move({x, y})
+      } else {
+        return true;
+        // actor.action = {name: 'SKIP'};
+      }
+        
+      case 'MOVE':                
         const moveTile = this.Dungeon.map.getCell(actor.pos.x + action.dir.x, actor.pos.y + action.dir.y);
 
         if (!moveTile.value.canWalk) {
@@ -33,7 +54,9 @@ export default class Turns {
           // this.Dungeon.updateMask(actor)
         }
 
-        return true;
+        return true;        
+        
+      case 'SKIP': return true;
     }
 
   }

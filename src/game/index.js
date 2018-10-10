@@ -5,9 +5,17 @@ import Dungeon from './Dungeon';
 
 import config from './config';
 
+const getDistance = ( x1, y1, x2, y2 ) => {	
+	let 	xs = x2 - x1;
+  let ys = y2 - y1;			
+	xs *= xs;
+	ys *= ys;	 
+	return Math.sqrt( xs + ys );
+};
+
 class Effect {
   constructor(x, y) {
-    console.log(x,y)
+    
     this.x = x;
     this.y = y;        
     this.startSize = 10;    
@@ -20,8 +28,7 @@ class Effect {
 
   update(delta) {    
     this.size = this.size + delta * 150
-    this.delta += delta;
-    console.log(this.delta)
+    this.delta += delta;    
   }
 
   render(ctx) {    
@@ -102,7 +109,8 @@ class Game {
     const firstRoom = this.Dungeon.rooms[0];
 
     const player = new Player('Player', firstRoom.center.x, firstRoom.center.y);
-    player.registerCanvas(this.canvas, this.ctx);    
+    player.registerCanvas(this.canvas, this.ctx);  
+    player.registerDungeon(this.Dungeon);
 
     
     this.Dungeon.getMask(player)
@@ -110,7 +118,8 @@ class Game {
     
     tt.push(player);
 
-    for (let i = 1; i < 5; i++) {
+    for (let i = 0; i < this.Dungeon.rooms.length; i++) {
+      if (i === 0) continue;
       const room = this.Dungeon.rooms[i];
       let m = new Mob('Yolo', room.center.x, room.center.y);
       m.registerCanvas(this.canvas, this.ctx);
@@ -131,7 +140,7 @@ class Game {
     this.time.then = this.time.now;
     const player = this.turnTakers.entities[0];
     this.Dungeon.render();
-    this.Dungeon.getMask(player);
+    // this.Dungeon.getMask(player);
     this.Dungeon.updateMask(player);
     this.Dungeon.renderMask();
 
@@ -143,24 +152,25 @@ class Game {
     
     
     this.turnTakers.entities.forEach(tt => {
+      this.Dungeon.getMask(tt);      
       tt.update();
     })
+
     this.turnTakers.update();
+
     for (let tt of this.turnTakers.entities) {
       if (tt === player) {
         tt.render();
         continue;
       }
+      if (getDistance(player.pos.x, player.pos.y, tt.pos.x, tt.pos.y) > player.viewRadius) continue;
       if (_.find(player.canSee, e => e.x === tt.pos.x && e.y === tt.pos.y))  {
         tt.render();
       }      
     }
 
     // this.test(player, this.ctx);
-    
-
     // this.gui.render();
-    
     
     requestAnimationFrame(() => this.loop());
   }

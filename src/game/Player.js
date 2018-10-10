@@ -44,7 +44,7 @@ class Player extends Entity {
 
     if (Object.values(keys).some(e => e)) {
       this.keyLock = true;
-      setTimeout(() => {this.keyLock = false}, 150);
+      setTimeout(() => {this.keyLock = false}, 100);
     }
 
   };

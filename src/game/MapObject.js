@@ -2,7 +2,7 @@
 // x = i % width;    // % is the "modulo operator", the remainder of i / width;
 // y = i / width;    // where "/" is an integer division
 
-import { Graph } from './lib/astar';
+import { astar, Graph } from './lib/astar';
 
 export default class MapObject {
     constructor(width, height, initFill) {
@@ -58,20 +58,27 @@ export default class MapObject {
         }
     }
 
-    makeGraph(onlyFloors = false) {
+    makeGraph(onlyFloors = false, includeDoors = false) {
         const {width, height} = this;        
         let grid = [];        
         this.iterate((cellObject) => {            
-            const { x, y, value } = cellObject;
-            if (x == 0 && y == 0) console.log(value.weight)
+            const { x, y, value } = cellObject;            
             if (!grid[x]) grid[x] = [];
             if (onlyFloors) {
-                grid[x][y] = (value.type === 'floor') ? 1 : 0;
+                grid[x][y] = (value.type === 'floor' || value.type === 'door') ? 1 : 0;
             } else {
                 grid[x][y] = value.weight;
             }
         });
         return new Graph(grid);
       };
+
+    findPath(x0, y0, x1, y1) {
+        const graph = this.makeGraph(true, true);
+        const start = graph.grid[x0][y0];
+        const end = graph.grid[x1][y1];
+        const results = astar.search(graph, start, end);
+        return results;
+    }
 
 }

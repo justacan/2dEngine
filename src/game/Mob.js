@@ -6,6 +6,16 @@ const dirs = ['north', 'east', 'south', 'west'];
 
 class Mob extends Entity {
 
+  constructor(name, x, y){
+    super(name, x, y);
+    this.viewRadius = 8;
+    this.playerPos = {x: 0, y: 0}
+  }
+
+  registerPlayerPos(posObj) {
+    this.playerPos = posObj;
+  }
+
   getAction() {    
     if (this.action) {
       return this.action;
@@ -16,8 +26,10 @@ class Mob extends Entity {
     this.action = false;
   }
 
-  update() {
-    this.action = Move(_.sample(dirs));
+  update() {    
+    // console.log(this.pos, this.playerPos)
+    this.action = {name: 'LOCATE_PLAYER'}
+    // this.action = Move(_.sample(dirs));
   }
 
   render() {

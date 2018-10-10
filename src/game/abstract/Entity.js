@@ -11,11 +11,16 @@ export default class Entity {
     this.canSee = [];
     this.canvas;
     this.ctx;
+    this.Dungeon;
   }
 
   registerCanvas(canvas, ctx) {
     this.canvas = canvas;
     this.ctx = ctx;
+  }
+
+  registerDungeon(Dungeon) {
+    this.Dungeon = Dungeon;
   }
 
   getAction() {}
